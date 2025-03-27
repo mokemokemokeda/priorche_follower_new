@@ -1,0 +1,31 @@
+name: Fetch Twitter Followers and Update Google Drive
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # 日本時間 18:00 に実行
+  workflow_dispatch:  #手動実行
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install openpyxl
+
+      - name: Run script
+        env:
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+        run: python script.py
