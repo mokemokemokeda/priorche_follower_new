@@ -106,10 +106,12 @@ for i in range(0, len(df["username"]), 3):
 # 新しいデータフレームを作成
 new_data = pd.DataFrame(followers_data_list)
 
-# 記録ファイルの取得と更新
-history_file = "kansei.xlsx"  # ファイル名を変更
+# 記録ファイルの取得と更新処理
+history_file = "kansei.xlsx"  # 履歴ファイルの名前
 history_id = get_file_id(history_file)
+
 if history_id:
+    # 既存ファイルが存在する場合はダウンロード
     file_metadata = drive_service.files().get(fileId=history_id).execute()
     mime_type = file_metadata["mimeType"]
     if mime_type == "application/vnd.google-apps.spreadsheet":
@@ -117,21 +119,32 @@ if history_id:
     else:
         history_df = pd.read_excel(f"https://drive.google.com/uc?id={history_id}")
 else:
+    # ファイルが存在しない場合は新規作成
+    print("履歴ファイルが見つかりません。新しいファイルを作成します。")
     history_df = pd.DataFrame()
 
-# 新しい行としてデータを追加
+# 新しいデータを履歴ファイルに追加
 history_df = pd.concat([history_df, new_data], ignore_index=True)
 
-# ExcelファイルをGoogle Driveにアップロード
+# Excel ファイルを Google Drive にアップロード
 with io.BytesIO() as fh:
-    with pd.ExcelWriter(fh, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(fh, engine="xlsxwriter") as writer:
         history_df.to_excel(writer, index=False, sheet_name="Sheet1")
     fh.seek(0)
-    media = MediaIoBaseUpload(fh, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    media = MediaIoBaseUpload(
+        fh, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
     if history_id:
+        # 既存ファイルの更新
         drive_service.files().update(fileId=history_id, media_body=media).execute()
+        print(f"履歴ファイル '{history_file}' を更新しました。")
     else:
-        file_metadata = {"name": history_file, "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
+        # 新しいファイルの作成
+        file_metadata = {
+            "name": history_file,
+            "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }
         drive_service.files().create(body=file_metadata, media_body=media).execute()
+        print(f"新しい履歴ファイル '{history_file}' を作成しました。")
 
 print("フォロワー数を更新しました")
