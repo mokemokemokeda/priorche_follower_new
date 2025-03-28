@@ -19,7 +19,6 @@ json_data = json.loads(google_credentials_json)
 # Google Drive API 認証
 credentials = service_account.Credentials.from_service_account_info(json_data)
 drive_service = build("drive", "v3", credentials=credentials)
-print("✅ Google Drive API の認証が完了しました！")
 
 # Google Drive からファイル ID を取得する関数
 def get_file_id(file_name):
@@ -52,7 +51,7 @@ url = "https://api.twitter.com/2/users/by/username/"
 file_id = get_file_id("priorche_accounts.csv")
 if file_id:
     df = pd.read_csv(f"https://drive.google.com/uc?id={file_id}")
-    print("Twitterアカウントリストを取得しました！")
+    print("Twitterアカウントリストを取得しました")
 else:
     raise FileNotFoundError("priorche_accounts.csv が見つかりません。")
 
@@ -102,7 +101,7 @@ else:
 
 # 新しい行としてデータを追加
 history_df = pd.concat([history_df, new_data], ignore_index=True)
-#print("📊 更新後のデータ:")
+#print("更新後のデータ:")
 #print(history_df)
 
 # ExcelファイルをGoogle Driveにアップロード（Sheet1に書き出す）
