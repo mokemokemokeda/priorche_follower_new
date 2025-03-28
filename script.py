@@ -122,7 +122,7 @@ else:
 # 新しい行としてデータを追加
 history_df = pd.concat([history_df, new_data], ignore_index=True)
 
-# ExcelファイルをGoogle Driveにアップロード（Sheet1に書き出す）
+# ExcelファイルをGoogle Driveにアップロード
 with io.BytesIO() as fh:
     with pd.ExcelWriter(fh, engine='xlsxwriter') as writer:
         history_df.to_excel(writer, index=False, sheet_name="Sheet1")
@@ -134,4 +134,4 @@ with io.BytesIO() as fh:
         file_metadata = {"name": history_file, "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
         drive_service.files().create(body=file_metadata, media_body=media).execute()
 
-print("フォロワー数を更新しました！")
+print("フォロワー数を更新しました")
