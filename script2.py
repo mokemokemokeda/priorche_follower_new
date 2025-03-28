@@ -10,6 +10,18 @@ from datetime import datetime
 import os
 import json
 
+def retry_request(func, retries=3, delay=5, *args, **kwargs):
+    """リトライ処理付きリクエスト"""
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"⚠ エラー: {e}. {attempt + 1}/{retries}回再試行中...")
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise
+
 # 環境変数からサービスアカウントキーを取得
 google_credentials_json = os.getenv("GOOGLE_SERVICE_ACCOUNT")
 if not google_credentials_json:
@@ -23,7 +35,9 @@ drive_service = build("drive", "v3", credentials=credentials)
 # Google Drive からファイル ID を取得する関数
 def get_file_id(file_name):
     query = f"name = '{file_name}' and trashed = false"
-    results = drive_service.files().list(q=query, fields="files(id, name)").execute()
+    results = retry_request(
+        lambda: drive_service.files().list(q=query, fields="files(id, name)").execute()
+    )
     files = results.get("files", [])
     return files[0]["id"] if files else None
 
@@ -50,7 +64,7 @@ url = "https://api.twitter.com/2/users/by/username/"
 # Google Drive から Twitter アカウントリスト取得
 file_id = get_file_id("priorche_accounts.csv")
 if file_id:
-    df = pd.read_csv(f"https://drive.google.com/uc?id={file_id}")
+    df = retry_request(lambda: pd.read_csv(f"https://drive.google.com/uc?id={file_id}"))
     print("Twitterアカウントリストを取得しました")
 else:
     raise FileNotFoundError("priorche_accounts.csv が見つかりません。")
@@ -66,18 +80,24 @@ for i in range(0, len(df["username"]), 3):
 
     for username in batch:
         user_url = f"{url}{username}?user.fields=public_metrics"
-        response = requests.get(user_url, headers=headers)
-        if response.status_code == 200:
-            user_data = response.json()
+
+        def fetch_twitter_data():
+            response = requests.get(user_url, headers=headers)
+            if response.status_code != 200:
+                raise Exception(f"HTTP {response.status_code}: {response.text}")
+            return response.json()
+
+        try:
+            user_data = retry_request(fetch_twitter_data)
             followers_count = user_data["data"]["public_metrics"]["followers_count"]
             followers_data[username] = followers_count
             print(f" @{username} のフォロワー数: {followers_count}")
-        else:
-            print(f"⚠エラー: {response.status_code} - @{username}")
+        except Exception as e:
+            print(f"⚠ エラー: {e} - @{username}")
         time.sleep(1)  # API制限対策
-    
+
     followers_data_list.append(followers_data)
-    
+
     # 3人処理後に30分待機（最後のバッチ以外）
     if i + 3 < len(df["username"]):
         print("30分間待機中...")
@@ -101,10 +121,8 @@ else:
 
 # 新しい行としてデータを追加
 history_df = pd.concat([history_df, new_data], ignore_index=True)
-#print("更新後のデータ:")
-#print(history_df)
 
-# ExcelファイルをGoogle Driveにアップロード（Sheet1に書き出す）
+# ExcelファイルをGoogle Driveにアップロード
 with io.BytesIO() as fh:
     with pd.ExcelWriter(fh, engine='xlsxwriter') as writer:
         history_df.to_excel(writer, index=False, sheet_name="Sheet1")
@@ -116,4 +134,4 @@ with io.BytesIO() as fh:
         file_metadata = {"name": history_file, "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}
         drive_service.files().create(body=file_metadata, media_body=media).execute()
 
-print("フォロワー数を更新しました！")
+print("フォロワー数を更新しました")
