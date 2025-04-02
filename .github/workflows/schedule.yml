@@ -2,7 +2,7 @@ name: Fetch Twitter Followers and Update Google Drive
 
 on:
   schedule:
-    - cron: '0 9 * * *'  # 日本時間 18:00 に実行
+    - cron: '0 0 * * *'  # 日本時間 9:00 に実行
   workflow_dispatch:  #手動実行
 
 jobs:
