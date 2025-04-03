@@ -107,7 +107,7 @@ for i in range(0, len(df["username"]), 3):
 new_data = pd.DataFrame(followers_data_list)
 
 # 記録ファイルの取得と更新
-history_file = "kansei.xlsx"  # ファイル名を変更
+history_file = "priorche_follower_shukei.xlsx"  # ファイル名を変更
 history_id = get_file_id(history_file)
 if history_id:
     file_metadata = drive_service.files().get(fileId=history_id).execute()
