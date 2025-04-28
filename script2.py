@@ -55,7 +55,7 @@ def download_google_sheets_file(file_id):
     return fh
 
 # Twitter API 認証
-twitter_bearer_token = os.getenv("TWITTER_BEARER_TOKEN")
+twitter_bearer_token = os.getenv("TWITTER_BEARER_TOKEN2")
 if not twitter_bearer_token:
     raise ValueError("TWITTER_BEARER_TOKEN が設定されていません。")
 headers = {"Authorization": f"Bearer {twitter_bearer_token}"}
