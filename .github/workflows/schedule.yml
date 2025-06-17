@@ -29,3 +29,4 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
           TWITTER_BEARER_TOKEN2: ${{ secrets.TWITTER_BEARER_TOKEN2 }}
         run: python script2.py
+
